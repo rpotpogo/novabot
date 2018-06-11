@@ -152,7 +152,7 @@ public class PokeSpawn extends Spawn
 
             final MessageBuilder messageBuilder = new MessageBuilder();
             final EmbedBuilder embedBuilder = new EmbedBuilder();
-            embedBuilder.setColor(getColor());
+            embedBuilder.setColor(getColor(formatFile));
             embedBuilder.setTitle(novaBot.config.formatStr(properties, (encountered()) ? novaBot.config.getEncounterTitleFormatting(formatFile) : (novaBot.config.getTitleFormatting(formatFile, "pokemon"))), novaBot.config.formatStr(properties, novaBot.config.getTitleUrl(formatFile, "pokemon")));
             embedBuilder.setDescription(novaBot.config.formatStr(properties, (encountered()) ? novaBot.config.getEncounterBodyFormatting(formatFile) : novaBot.config.getBodyFormatting(formatFile, "pokemon")));
             embedBuilder.setThumbnail(Pokemon.getIcon(this.id));
@@ -274,21 +274,24 @@ public class PokeSpawn extends Spawn
         return iv != 0 || !(move_1 == 0) || !(move_2 == 0) || cp > 0;
     }
 
-    private Color getColor() {
-        if(iv < 25)
-            return new Color(0x9d9d9d);
-        if(iv < 50)
-            return new Color(0xffffff);
-        if(iv < 81)
-            return new Color(0x1eff00);
-        if(iv < 90)
-            return new Color(0x0070dd);
-        if(iv < 100)
-            return new Color(0xa335ee);
-        if(iv == 100)
-            return new Color(0xff8000);
-
-        return Color.GRAY;
+    private Color getColor(String formatFile) {
+        if (novaBot.getConfig().showColor(formatFile, "pokemon")) {
+           if(iv == null || iv < 25)
+              return new Color(0x9d9d9d);
+            if(iv < 50)
+                return new Color(0xffffff);
+            if(iv < 81)
+                return new Color(0x1eff00);
+            if(iv < 90)
+                return new Color(0x0070dd);
+            if(iv < 100)
+                return new Color(0xa335ee);
+            if(iv == 100)
+                return new Color(0xff8000);
+            return Color.GRAY;
+        } else {
+            return Color.GRAY;
+          }
     }
 
     private String getDespawnTime(DateTimeFormatter printFormat) {
