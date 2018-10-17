@@ -224,7 +224,7 @@ public class PokeSpawn extends Spawn
             embedBuilder.setColor(getColor(formatFile));
             embedBuilder.setTitle(novaBot.getConfig().formatStr(getProperties(), (encountered()) ? novaBot.getConfig().getEncounterTitleFormatting(formatFile) : (novaBot.getConfig().getTitleFormatting(formatFile, "pokemon"))), novaBot.getConfig().formatStr(getProperties(), novaBot.getConfig().getTitleUrl(formatFile, "pokemon")));
             embedBuilder.setDescription(novaBot.getConfig().formatStr(getProperties(), (encountered()) ? novaBot.getConfig().getEncounterBodyFormatting(formatFile) : novaBot.getConfig().getBodyFormatting(formatFile, "pokemon")));
-            embedBuilder.setThumbnail(Pokemon.getIcon(this.id,this.formId));
+            embedBuilder.setThumbnail(Pokemon.getIcon(novaBot.getConfig().getIconUrl(), this.id, this.formId));
             if (novaBot.getConfig().showMap(formatFile, "pokemon")) {
                 embedBuilder.setImage(this.getImage(formatFile));
             }

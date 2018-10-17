@@ -67,6 +67,7 @@ public class Config {
     private ZoneId timeZone = ZoneId.systemDefault();
     private Integer minSecondsLeft = 60;
     private String footerText = null;
+    private String iconUrl = "https://raw.githubusercontent.com/novabot-sprites/novabot-sprites/master/";
     private String googleSuburbField = "city";
     private String adminRole = null;
     private String commandChannelId = null;
@@ -95,6 +96,8 @@ public class Config {
     private HashMap<GeofenceIdentifier, String> raidChats = new HashMap<>();
     private HashMap<String, GeoApiContext> geoApis = new HashMap<>();
     private int nbMaxConnections = 8;
+    private boolean apiEnabled = false;
+    private int apiPort = 8080;
     private String mainGuild = null;
 
     public Config(String configName, String gkeys, String formatting, String raidChannelsFile, String pokeChannelsFile,
@@ -306,6 +309,8 @@ public class Config {
 
         startupMessage = config.get("startupMessage", Boolean.class, startupMessage);
 
+        iconUrl = config.get("iconUrl", iconUrl);
+
         adminRole = config.get("adminRole", adminRole);
 
         if (adminRole == null) {
@@ -335,6 +340,11 @@ public class Config {
         if (mainGuild == null){
             log.warn(String.format("Couldn't find mainGuild in %s. novabot will use the first guild it finds as main guild.", configName));
         }
+
+        apiPort = config.get("apiPort", Integer.class, apiPort);
+
+        apiEnabled = config.get("apiEnabled", Boolean.class, apiEnabled);
+
     }
 
     public boolean countLocationsInLimits() {
@@ -514,7 +524,7 @@ public class Config {
         System.out.println(novaBot.getConfig().matchesFilter(novaBot.getConfig().getPokeFilters().get("ultrarare.json"),pokeSpawn,"ultrarare.json"));
         System.out.println(novaBot.getConfig().passesGlobalFilter(pokeSpawn));
 
-        RaidSpawn raidSpawn = new RaidSpawn("gymname", "gymid", -35, 149, Team.Valor, ZonedDateTime.now(),ZonedDateTime.now(), 0,50012,1,2,5);
+        RaidSpawn raidSpawn = new RaidSpawn("gymname", "gymid", -35, 149, Team.Valor, ZonedDateTime.now(),ZonedDateTime.now(), 0,50012,1,2,5, null);
         System.out.println(novaBot.getConfig().matchesFilter(novaBot.getConfig().getRaidFilters().get("raidfilter.json"),raidSpawn));
 
     }
