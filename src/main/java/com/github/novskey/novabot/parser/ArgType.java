@@ -12,6 +12,11 @@ public enum ArgType
     GymName,
     Int,
     IV,
+    ATKIV,
+    DEFIV, 
+    STAIV,
+    PVPGreatRank,
+    PVPUltraRank,
     Level,
     Locations,
     Pokemon,
@@ -43,8 +48,10 @@ public enum ArgType
                 return "time unit";
             case Int:
                 return "whole number";
-            case IV:
+            case IV: case ATKIV: case DEFIV: case STAIV:
                 return "IV";
+            case PVPGreatRank: case PVPUltraRank:
+                return "rank";
             case Level:
                 return "level";
             case GymName:

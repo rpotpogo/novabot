@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class Pokemon {
     private static final double[] cpMultipliers = new double[]{0.094, 0.16639787, 0.21573247, 0.25572005, 0.29024988,
@@ -27,6 +28,8 @@ public class Pokemon {
     private static JsonObject pokemonInfo;
     private static JsonObject movesInfo;
     private static JsonObject formInfo;
+    private static JsonObject evolutions;
+    private static JsonObject pvpivs;
 
     private static final Logger LOGGER = LoggerFactory.getLogger("Pokemon");
 
@@ -80,6 +83,28 @@ public class Pokemon {
                 LOGGER.error("Couldn't find static/data/forms.json, aborting");
                 System.exit(0);
             }
+            
+            try{
+                element = parser.parse(new FileReader("static/data/evolutions.json"));
+
+                if (element.isJsonObject()) {
+                    evolutions = element.getAsJsonObject();
+                }
+            } catch (FileNotFoundException e) {
+                LOGGER.error("Couldn't find static/data/evolutions.json, aborting");
+                System.exit(0);
+            }
+            
+            try{
+                element = parser.parse(new FileReader("static/data/pvpivs.json"));
+
+                if (element.isJsonObject()) {
+                	pvpivs = element.getAsJsonObject();
+                }
+            } catch (FileNotFoundException e) {
+                LOGGER.error("Couldn't find static/data/pvpivs.json, aborting");
+                System.exit(0);
+            }
 
         }catch (Exception e){
             LOGGER.error("Error initialising Pokemon class",e);
@@ -94,10 +119,18 @@ public class Pokemon {
     public int maxcp;
     public int mincp;
     private Location location;
+	public int[] minIVs;
+	public int[] maxIVs;
+	public int PVPGreatRank;
+	public int PVPUltraRank;
 
     public Pokemon(final String name) {
         this.miniv = 0.0f;
         this.maxiv = 100.0f;
+        this.PVPGreatRank = 4096;
+        this.PVPUltraRank = 4096;
+        this.mincp = 0;
+        this.maxcp = 2147483647;		
 		String nameLower = name.toLowerCase().replaceAll("\\s+","");
         if (nameToID(nameLower) == 0) {
 			this.name = null;
@@ -106,13 +139,13 @@ public class Pokemon {
         }
     }
 
-    public Pokemon(final int id, final float min_iv, final float max_iv) {
+    private Pokemon(final int id, final float min_iv, final float max_iv) {
 		this(idToName(id));
         this.miniv = min_iv;
         this.maxiv = max_iv;
     }
 
-    public Pokemon(final String pokeName, final Location location, final float miniv, final float maxiv, int minlvl, int maxlvl, int mincp, int maxcp) {
+    private Pokemon(final String pokeName, final Location location, final float miniv, final float maxiv, int minlvl, int maxlvl, int mincp, int maxcp) {
         this(pokeName);
         this.location = location;
         this.miniv = miniv;
@@ -122,21 +155,27 @@ public class Pokemon {
         this.mincp = mincp;
         this.maxcp = maxcp;
     }
+    
+    public Pokemon(final String pokeName, final Location location, final float miniv, final float maxiv, int minlvl, int maxlvl, int mincp, int maxcp, int[] minIVs, int[] maxIVs, int PVPGreatRank, int PVPUltraRank) {
+        this(pokeName, location, miniv, maxiv, minlvl, maxlvl, mincp, maxcp);
+        this.minIVs = minIVs;
+        this.maxIVs = maxIVs;
+        this.PVPGreatRank = PVPGreatRank;
+        this.PVPUltraRank = PVPUltraRank;
+    }
 
     public Pokemon(final int id) {
 		this(idToName(id));
-        this.miniv = 0.0f;
-        this.maxiv = 100.0f;
     }
 
-    public Pokemon(final int id, final Location location, final float miniv, final float maxiv) {
+    private Pokemon(final int id, final Location location, final float miniv, final float maxiv) {
 		this(idToName(id));
         this.location = location;
         this.miniv = miniv;
         this.maxiv = maxiv;
     }
 
-    public Pokemon(int pokemonId, Location location, float minIv, float maxIv, int minLvl, int maxLvl, int minCp, int maxCp) {
+    private Pokemon(int pokemonId, Location location, float minIv, float maxIv, int minLvl, int maxLvl, int minCp, int maxCp) {
         this(Pokemon.idToName(pokemonId),location,minIv,maxIv,minLvl,maxLvl,minCp,maxCp);
     }
 
@@ -230,12 +269,17 @@ public class Pokemon {
                 poke.maxcp == this.maxcp &&
                 poke.miniv == this.miniv &&
                 poke.maxiv == this.maxiv &&
+                Arrays.equals(poke.minIVs, this.minIVs) &&
+                Arrays.equals(poke.maxIVs, this.maxIVs) &&
+                poke.PVPGreatRank == this.PVPGreatRank && 
+                poke.PVPUltraRank == this.PVPUltraRank && 
                 poke.location.equals(this.location);
     }
 
     @Override
     public String toString() {
-        return String.format("%s (%s,%s)iv (%s%s)cp (%s%s)lvl",name,miniv,maxiv,mincp,maxcp,minlvl,maxlvl);
+        return String.format("%s (%s,%s)iv (%s%s)cp (%s%s)lvl %sminivs (%s)maxivs %dgreatrank %dultrarank",
+        		name,miniv,maxiv,mincp,maxcp,minlvl,maxlvl,Arrays.toString(minIVs),Arrays.toString(maxIVs),PVPGreatRank,PVPUltraRank);
     }
 
     public static String idToName(final int id) {
@@ -481,6 +525,10 @@ public class Pokemon {
 
     public static void main(String[] args) {
 
+    	//System.out.println(getPVPRankingDescription(227,1,0,15,14));
+    	System.out.println(getPVPRankingDescription(410,22,12,15,15));
+    	if (true) return;
+		
         for (Integer integer : new Integer[]{13, 16, 19, 21, 23, 29, 32, 41, 48, 60, 98, 118, 120, 161, 163, 165, 167, 177, 183, 194}) {
             System.out.println(Pokemon.idToName(integer));
         }
@@ -563,6 +611,61 @@ public class Pokemon {
                 break;
         }
         return (int) Math.floor(((baseAtk(bossId) + 15) * Math.sqrt(baseDef(bossId) + 15) * Math.sqrt(stamina)) / 10);
+    }
+    
+    public static class PVPRanking {
+    	public Integer PVPGreatRank;
+    	public Integer PVPUltraRank;
+    	public String description;
+    	public String toString(){
+    		return description;
+    	}
+    };	
+   
+    public static PVPRanking getPVPRankingDescription(int pokemonId, int level, int atkIV, int defIV, int staIV){
+		PVPRanking toRet = new PVPRanking();
+    	try {
+    		ArrayList<String> rankPossibilities = new ArrayList<String>();
+    		//System.out.println(evolutions.getAsJsonObject(Integer.toString(pokemonId)));
+    		ArrayList<Integer> evolutionIds = new ArrayList<Integer>();
+    		evolutionIds.add(pokemonId); //consider as-is
+			for(JsonElement _evolution : evolutions.getAsJsonObject(Integer.toString(pokemonId)).getAsJsonArray("evolutionDexNumbers")) {
+				evolutionIds.add(_evolution.getAsInt());
+			}
+			for(int id : evolutionIds) {
+				JsonArray rankPossibilitiesForEvolution = pvpivs.getAsJsonArray(Integer.toString(id));
+				//Important.
+				if (rankPossibilitiesForEvolution == null) {
+					continue;
+				}
+				//System.out.println(rankPossibilitiesForEvolution);
+				for(JsonElement _rankPossible : rankPossibilitiesForEvolution) {
+					JsonObject rankPossible = _rankPossible.getAsJsonObject();
+					double atLevel = rankPossible.getAsJsonPrimitive("maxlevel").getAsDouble();
+					if (atLevel >= level){
+						JsonArray ivs = rankPossible.getAsJsonArray("ivs");
+						if (ivs.get(0).getAsInt() == atkIV && ivs.get(1).getAsInt() == defIV && ivs.get(2).getAsInt() == staIV) {
+							String league = rankPossible.getAsJsonPrimitive("mode").getAsString();
+							int rank = rankPossible.getAsJsonPrimitive("rank").getAsInt();
+							if (league.equals("great") && (toRet.PVPGreatRank == null || rank < toRet.PVPGreatRank)) {
+								toRet.PVPGreatRank = rank;
+							}
+							if (league.equals("ultra") && (toRet.PVPUltraRank == null || rank < toRet.PVPUltraRank)) {
+								toRet.PVPUltraRank = rank;
+							}
+							rankPossibilities.add(String.format("Rank %d %s league level %.1f %s", rank, league, atLevel, Pokemon.idToName(id)));	
+						}
+					}
+				}
+			}
+			if (!rankPossibilities.isEmpty()) {
+				toRet.description = String.join("\n", rankPossibilities);
+			}
+    	} catch (Throwable t) {
+    		System.err.println("Error in getPVPRankingDescription!");
+    		t.printStackTrace();
+    	}
+		return toRet;
     }
 
 }

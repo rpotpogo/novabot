@@ -8,6 +8,8 @@ import com.github.novskey.novabot.core.Types;
 import com.github.novskey.novabot.core.Weather;
 import com.github.novskey.novabot.data.SpawnLocation;
 import com.github.novskey.novabot.maps.GeofenceIdentifier;
+import com.github.novskey.novabot.pokemon.Pokemon.PVPRanking;
+
 import net.dv8tion.jda.core.EmbedBuilder;
 import net.dv8tion.jda.core.MessageBuilder;
 import net.dv8tion.jda.core.entities.Message;
@@ -46,6 +48,8 @@ public class PokeSpawn extends Spawn
     public Integer iv_defense;
     public Integer iv_stamina;
 
+	public Integer pvp_great_rank;
+	public Integer pvp_ultra_rank;
     public Float catchprob1;
     public Float catchprob2;
     public Float catchprob3;
@@ -100,6 +104,7 @@ public class PokeSpawn extends Spawn
         this.iv_stamina = stamina;
         getProperties().put("sta", String.valueOf(iv_stamina));
 
+    	getProperties().put("pvpdescription", "");
         if (attack != null && defense != null && stamina != null){
             this.iv = (attack + defense + stamina) / 45.0f * 100.0f;
             getProperties().put("iv", getIv());
@@ -143,18 +148,34 @@ public class PokeSpawn extends Spawn
         getProperties().put("weather","unkn");
         getProperties().put("weather_icon","");
         getProperties().put("encounter_id","");
+        
+    }
+    
+    //PokeSpawn constructor process is a little weird, but we can only check pvp description once we have
+    //all the IVs and the level.
+    private void initPVPDescription() {
+        if (iv_attack != null && iv_defense != null && iv_stamina != null && level != null){
+	        PVPRanking pvpRanking = Pokemon.getPVPRankingDescription(id, level, iv_attack, iv_defense, iv_stamina);
+	        if (pvpRanking.description != null) {
+	        	getProperties().put("pvpdescription", pvpRanking.description+"\n");
+	        	pvp_great_rank = pvpRanking.PVPGreatRank;
+	        	pvp_ultra_rank = pvpRanking.PVPUltraRank;
+	        }
+        }
     }
 
     public PokeSpawn(final int id, final double lat, final double lon, final ZonedDateTime disappearTime, final Integer attack, final Integer defense, final Integer stamina, final Integer move1, final Integer move2, final float weight, final float height, final Integer gender, final Integer form, Integer cp, double cpModifier) {
         this(id,lat,lon,disappearTime,attack,defense,stamina,move1,move2,weight,height,gender,form,cp);
         level = Pokemon.getLevel(cpModifier);
         getProperties().put("level", String.valueOf(level));
+        initPVPDescription();
     }
 
     public PokeSpawn(final int id, final double lat, final double lon, final ZonedDateTime disappearTime, final Integer attack, final Integer defense, final Integer stamina, final Integer move1, final Integer move2, final float weight, final float height, final Integer gender, final Integer form, Integer cp, Integer level) {
         this(id,lat,lon,disappearTime,attack,defense,stamina,move1,move2,weight,height,gender,form,cp);
         this.level = level;
         getProperties().put("level", String.valueOf(level));
+        initPVPDescription();
     }
 
     public PokeSpawn(int id, double lat, double lon, ZonedDateTime disappearTime, Integer attack, Integer defense, Integer stamina, Integer move1, Integer move2, float weight, float height, Integer gender, Integer form, Integer cp, Integer level, int weather, String encounter_id) {
