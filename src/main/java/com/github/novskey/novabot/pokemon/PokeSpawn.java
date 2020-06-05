@@ -40,16 +40,16 @@ public class PokeSpawn extends Spawn
     public Float iv;
     public Integer cp;
     public Integer level;
-    private Float weight;
-    private Float height;
-    private Integer gender;
+    public Float weight;
+    public Float height;
+    public Integer gender;
     private String suburb;
     public Integer iv_attack;
     public Integer iv_defense;
     public Integer iv_stamina;
-
 	public Integer pvp_great_rank;
 	public Integer pvp_ultra_rank;
+
     public Float catchprob1;
     public Float catchprob2;
     public Float catchprob3;
@@ -135,9 +135,9 @@ public class PokeSpawn extends Spawn
         getProperties().put("gender", getGender());
 
         if (form != null && form != 0) {
-            this.form = ((Pokemon.formToString(id,form) == null) ? null : String.valueOf(Pokemon.formToString(id,form)));
+            this.form = Pokemon.formToString(id,form);
         }
-        getProperties().put("form", (this.form == null ? "" : this.form));
+        getProperties().put("form", (this.form == null || this.form.equals("") ? "" : " ("+this.form+")"));
 
         this.cp = cp;
         getProperties().put("cp", cp == null ? "?" : String.valueOf(cp));
@@ -155,7 +155,7 @@ public class PokeSpawn extends Spawn
     //all the IVs and the level.
     private void initPVPDescription() {
         if (iv_attack != null && iv_defense != null && iv_stamina != null && level != null){
-	        PVPRanking pvpRanking = Pokemon.getPVPRankingDescription(id, level, iv_attack, iv_defense, iv_stamina);
+	        PVPRanking pvpRanking = Pokemon.getPVPRankingDescription(this);
 	        if (pvpRanking.description != null) {
 	        	getProperties().put("pvpdescription", pvpRanking.description+"\n");
 	        	pvp_great_rank = pvpRanking.PVPGreatRank;
@@ -178,7 +178,7 @@ public class PokeSpawn extends Spawn
         initPVPDescription();
     }
 
-    public PokeSpawn(int id, double lat, double lon, ZonedDateTime disappearTime, Integer attack, Integer defense, Integer stamina, Integer move1, Integer move2, float weight, float height, Integer gender, Integer form, Integer cp, Integer level, int weather, String encounter_id) {
+    public PokeSpawn(int id, double lat, double lon, ZonedDateTime disappearTime, Integer attack, Integer defense, Integer stamina, Integer move1, Integer move2, float weight, float height, Integer gender, Integer form, Integer cp, Integer level, Integer weather, String encounter_id) {
         this(id,lat,lon,disappearTime,attack,defense,stamina,move1,move2,weight,height,gender,form,cp,level);
         Weather w = Weather.fromId(weather);
         if (w != null) {
@@ -344,13 +344,13 @@ public class PokeSpawn extends Spawn
             return "?";
         }
         if (this.gender == 1) {
-            return "\u2642";
+            return "\u2642"; //male
         }
         if (this.gender == 2) {
-            return "\u2640";
-        }
+            return "\u2640"; //female
+        } 
         if (this.gender == 3) {
-            return "\u26b2";
+            return "\u26b2"; //neuter
         }
         return "?";
     }

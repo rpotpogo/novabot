@@ -1,18 +1,25 @@
 package com.github.novskey.novabot.pokemon;
 
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.github.novskey.novabot.core.Form;
 import com.github.novskey.novabot.core.Location;
 import com.github.novskey.novabot.Util.StringLocalizer;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.google.gson.JsonPrimitive;
 
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.util.ArrayList;
-import java.util.Arrays;
+
 
 public class Pokemon {
     private static final double[] cpMultipliers = new double[]{0.094, 0.16639787, 0.21573247, 0.25572005, 0.29024988,
@@ -110,20 +117,21 @@ public class Pokemon {
             LOGGER.error("Error initialising Pokemon class",e);
         }
     }
-
+    
     public final String name;
-    public float miniv;
+    public Location location;
+	public float miniv;
     public float maxiv;
     public int minlvl;
     public int maxlvl;
-    public int maxcp;
     public int mincp;
-    private Location location;
-	public int[] minIVs;
+    public int maxcp;
+    public int[] minIVs;
 	public int[] maxIVs;
 	public int PVPGreatRank;
 	public int PVPUltraRank;
-
+	public String form; //Exactly equals, let's go ahead and say case insensitive. Null = any form.
+    
     public Pokemon(final String name) {
         this.miniv = 0.0f;
         this.maxiv = 100.0f;
@@ -163,6 +171,12 @@ public class Pokemon {
         this.PVPGreatRank = PVPGreatRank;
         this.PVPUltraRank = PVPUltraRank;
     }
+    
+
+    public Pokemon(final String pokeName, final Location location, final float miniv, final float maxiv, int minlvl, int maxlvl, int mincp, int maxcp, int[] minIVs, int[] maxIVs, int PVPGreatRank, int PVPUltraRank, String form) {
+        this(pokeName, location, miniv, maxiv, minlvl, maxlvl, mincp, maxcp, minIVs, maxIVs, PVPGreatRank, PVPUltraRank);
+        this.form = form;
+    }
 
     public Pokemon(final int id) {
 		this(idToName(id));
@@ -194,11 +208,14 @@ public class Pokemon {
     }
 
     public static String getIcon(String url, final int id, Integer form) {
+        int length = 3;
+        String sform = "00";
         if (form != null && form != 0){
-            url = url +  id + "-" + form;
-        } else {
-            url += id;
+        	sform = String.valueOf(form);
         }
+        String sid = String.format ("%1$" + length + "s", id).replace(' ', '0'); //pad zeros to the left
+        url = "https://raw.githubusercontent.com/whitewillem/PogoAssets/resized/icons_large/pokemon_icon_" + sid + "_" + sform;
+        
         return url + ".png?5";
     }
 
@@ -207,11 +224,11 @@ public class Pokemon {
     }
 
     public static String getMoveType(int moveId) {
-    		if (moveId <= 0 || moveId > movesInfo.size()) {
-    			return StringLocalizer.getLocalString("Unknown");
-    		} else {
-    			return movesInfo.getAsJsonObject(Integer.toString(moveId)).get("type").getAsString();
-    		}
+    	JsonObject moveInfo = movesInfo.getAsJsonObject(Integer.toString(moveId));
+    	if (moveInfo == null) {
+    		return "unkn";
+    	}
+        return moveInfo.get("type").getAsString();
     }
 
     public static String getSize(int id, float height, float weight) {
@@ -273,13 +290,14 @@ public class Pokemon {
                 Arrays.equals(poke.maxIVs, this.maxIVs) &&
                 poke.PVPGreatRank == this.PVPGreatRank && 
                 poke.PVPUltraRank == this.PVPUltraRank && 
-                poke.location.equals(this.location);
+                poke.location.equals(this.location) &&
+                ("" + poke.form).equalsIgnoreCase("" + this.form);
     }
 
     @Override
     public String toString() {
-        return String.format("%s (%s,%s)iv (%s%s)cp (%s%s)lvl %sminivs (%s)maxivs %dgreatrank %dultrarank",
-        		name,miniv,maxiv,mincp,maxcp,minlvl,maxlvl,Arrays.toString(minIVs),Arrays.toString(maxIVs),PVPGreatRank,PVPUltraRank);
+        return String.format("%s (%s,%s)iv (%s%s)cp (%s%s)lvl %sminivs (%s)maxivs %dgreatrank %dultrarank %s",
+        		name,miniv,maxiv,mincp,maxcp,minlvl,maxlvl,Arrays.toString(minIVs),Arrays.toString(maxIVs),PVPGreatRank,PVPUltraRank,form == null ? "" : " (" + form + ")");
     }
 
     public static String idToName(final int id) {
@@ -374,10 +392,7 @@ public class Pokemon {
     }
 
     public static String formToString(final Integer id, Integer form) {
-        if (form == null || form == 0){
-            return "";
-        }
-
+       /*
         JsonObject pokemonForms = formInfo.getAsJsonObject(Integer.toString(id));
 
         if (pokemonForms == null){
@@ -391,8 +406,9 @@ public class Pokemon {
         }
 
         return formName.getAsString();
+        */
+        return Form.fromID(form);
     }
-
     public static String listToString(final Pokemon[] pokemon) {
         StringBuilder str = new StringBuilder();
         if (pokemon.length == 1) {
@@ -524,12 +540,40 @@ public class Pokemon {
     }
 
     public static void main(String[] args) {
-
+    
     	//System.out.println(getPVPRankingDescription(227,1,0,15,14));
-    	System.out.println(getPVPRankingDescription(410,22,12,15,15));
+    	//System.out.println(getPVPRankingDescription(410,22,12,15,15));
+    	PokeSpawn burmy = new PokeSpawn(
+    			412,  //id
+    			0.0,0.0, null, 
+    			7,14,15, //attack, def, sta
+    			0,0,0,0, 
+    			2, //gender 
+    			89, //trash form
+    			0, 
+    			3, //level 
+    			null,null //,0L,0,false
+    	);
+    	System.out.println(burmy.getProperties());
+    	System.out.println("Pvp description: " + burmy.getProperties().get("pvpdescription"));
+    	
+
+    	PokeSpawn galarianstunfisk = new PokeSpawn(
+    			618,  //id
+    			0.0,0.0, null, 
+    			0,14,15, //attack, def, sta
+    			0,0,0,0, 
+    			2, //gender 
+    			2345, //trash form
+    			0, 
+    			3, //level 
+    			null,null //,0L,0,false
+    	);
+    	System.out.println(galarianstunfisk.getProperties());
+    	System.out.println("Pvp description: " + galarianstunfisk.getProperties().get("pvpdescription"));
     	if (true) return;
-		
-        for (Integer integer : new Integer[]{13, 16, 19, 21, 23, 29, 32, 41, 48, 60, 98, 118, 120, 161, 163, 165, 167, 177, 183, 194}) {
+
+        for (Integer integer : new Integer[]{13, 16, 19, 21, 23, 29, 32, 41, 48, 60, 98, 118, 120, 122, 161, 163, 165, 167, 177, 183, 194, 412, 413}) {
             System.out.println(Pokemon.idToName(integer));
         }
 
@@ -621,19 +665,56 @@ public class Pokemon {
     		return description;
     	}
     };	
-   
-    public static PVPRanking getPVPRankingDescription(int pokemonId, int level, int atkIV, int defIV, int staIV){
+
+	private static final int POKEMON_GENDER_MALE = 1;
+	private static final int POKEMON_GENDER_FEMALE = 2;
+	private static final Set<Integer> maleOnlyPokemon = new HashSet(Arrays.asList(
+			414, //mothim
+			475 //gallade
+	));
+	private static final Set<Integer> femaleOnlyPokemon = new HashSet(Arrays.asList(
+			413, //wormadam
+			416, //vespiquen
+			282 //gardevoir
+	));
+    //public static PVPRanking getPVPRankingDescription(int pokemonId, int level, int atkIV, int defIV, int staIV){
+    public static PVPRanking getPVPRankingDescription(PokeSpawn poke){
+    	//return toRet to break out early
 		PVPRanking toRet = new PVPRanking();
-    	try {
+    	try {    		
     		ArrayList<String> rankPossibilities = new ArrayList<String>();
     		//System.out.println(evolutions.getAsJsonObject(Integer.toString(pokemonId)));
     		ArrayList<Integer> evolutionIds = new ArrayList<Integer>();
-    		evolutionIds.add(pokemonId); //consider as-is
-			for(JsonElement _evolution : evolutions.getAsJsonObject(Integer.toString(pokemonId)).getAsJsonArray("evolutionDexNumbers")) {
-				evolutionIds.add(_evolution.getAsInt());
+    		evolutionIds.add(poke.id); //consider as-is
+			JsonObject evolutionsJsonObject = evolutions.getAsJsonObject(Integer.toString(poke.id));
+			if (evolutionsJsonObject != null) {
+				for(JsonElement _evolution : evolutionsJsonObject.getAsJsonArray("evolutionDexNumbers")) {
+					evolutionIds.add(_evolution.getAsInt());
+				}
+			} else {
+	    		System.err.println("WARN: No evolution data for pokemon ID" + poke.id);
 			}
 			for(int id : evolutionIds) {
-				JsonArray rankPossibilitiesForEvolution = pvpivs.getAsJsonArray(Integer.toString(id));
+				//Gender locked evolution:
+				if (maleOnlyPokemon.contains(id) && poke.gender != POKEMON_GENDER_MALE){
+					continue;
+				}
+				if (femaleOnlyPokemon.contains(id) && poke.gender != POKEMON_GENDER_FEMALE){
+					continue;
+				}
+				//Indexed by filter name and form, i.e. "Mr. Mime" or "Exeggutor (Alola)"
+				String filterNameAndForm = Pokemon.getFilterName(id);
+				if (filterNameAndForm == null) {
+		    		System.err.println("WARN: No filter name for ID " + poke.id);
+		    		continue;
+				}
+				if (poke.form != null) {
+					filterNameAndForm += " (" + poke.form +")";
+				}
+				//System.out.println(filterNameAndForm);
+				//System.out.println(id +" " + poke.gender);
+				
+				JsonArray rankPossibilitiesForEvolution = pvpivs.getAsJsonArray(filterNameAndForm);
 				//Important.
 				if (rankPossibilitiesForEvolution == null) {
 					continue;
@@ -642,9 +723,9 @@ public class Pokemon {
 				for(JsonElement _rankPossible : rankPossibilitiesForEvolution) {
 					JsonObject rankPossible = _rankPossible.getAsJsonObject();
 					double atLevel = rankPossible.getAsJsonPrimitive("maxlevel").getAsDouble();
-					if (atLevel >= level){
+					if (atLevel >= poke.level){
 						JsonArray ivs = rankPossible.getAsJsonArray("ivs");
-						if (ivs.get(0).getAsInt() == atkIV && ivs.get(1).getAsInt() == defIV && ivs.get(2).getAsInt() == staIV) {
+						if (ivs.get(0).getAsInt() == poke.iv_attack && ivs.get(1).getAsInt() == poke.iv_defense && ivs.get(2).getAsInt() == poke.iv_stamina) {
 							String league = rankPossible.getAsJsonPrimitive("mode").getAsString();
 							int rank = rankPossible.getAsJsonPrimitive("rank").getAsInt();
 							if (league.equals("great") && (toRet.PVPGreatRank == null || rank < toRet.PVPGreatRank)) {
@@ -653,7 +734,9 @@ public class Pokemon {
 							if (league.equals("ultra") && (toRet.PVPUltraRank == null || rank < toRet.PVPUltraRank)) {
 								toRet.PVPUltraRank = rank;
 							}
-							rankPossibilities.add(String.format("Rank %d %s league level %.1f %s", rank, league, atLevel, Pokemon.idToName(id)));	
+							JsonPrimitive _type = rankPossible.getAsJsonPrimitive("type");
+							String type = _type == null ? "" : (" by " + _type.getAsString());
+							rankPossibilities.add(String.format("Rank %d %s league level %.1f %s%s", rank, league, atLevel, filterNameAndForm.toLowerCase(), type));	
 						}
 					}
 				}
@@ -665,7 +748,7 @@ public class Pokemon {
     		System.err.println("Error in getPVPRankingDescription!");
     		t.printStackTrace();
     	}
-		return toRet;
+    	return toRet;
     }
 
 }
